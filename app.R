@@ -65,7 +65,7 @@ ui <- fluidPage(
   
   # Add some informational text using and HTML tag (i.e., a level 5 heading)
   h5(
-    "In this app you can filter occurrences by species, type of observation, and elevation. You can also click on individual occurrences to view metadata."
+    "In this app you can filter occurrences by species, land cover, and elevation. You can also click on individual occurrences to view metadata."
   ),
   
   # Sidebar layout
@@ -79,7 +79,7 @@ ui <- fluidPage(
         # these names should match that in the dataset, if they didn't you would use 'choiceNames' and 'choiceValues' like we do for the next widget
         choices = list("Domestic Horse", "Donkey", "Equines (not identified to species)"),
         # selected = sets which are selected by default
-        selected = c("Domestic Horse", "Donkey", "Equines - not identified to species")
+        selected = c("Domestic Horse", "Donkey", "Equines (not identified to species)")
       ),
       
       # Input: select landcover shown on map
@@ -87,9 +87,9 @@ ui <- fluidPage(
         inputId = "landcover",
         label = "landcover",
         # these names should match that in the dataset, if they didn't you would use 'choiceNames' and 'choiceValues' like we do for the next widget
-        choices = list("D1", "Donkey", "Equines (not identified to species)"),
+        choices = list("Forest", "Grassland"),
         # selected = sets which are selected by default
-        selected = c("Domestic Horse", "Donkey", "Equines - not identified to species")
+        selected = c("Forest", "Grassland")
       ),
       
       # Input: Filter by elevation
