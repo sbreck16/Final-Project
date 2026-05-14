@@ -1,0 +1,124 @@
+---
+title: "Final_Markdown"
+author: "Sage Breck"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#set up for the shiny app
+library(shiny)
+library(leaflet)
+library(sf)
+library(dplyr)
+library(readr)
+library(utils)
+library(utils)
+library(terra)
+
+source("C:/Users/sageb/OneDrive/Desktop/ESS_GitHub/Final-Projects-Class/setup.R")
+
+load("C:/Users/sageb/OneDrive/Desktop/ESS_GitHub/Final-Projects-Class/data/spatdat.RData")
+
+#read in the elevation and landcover rasters
+landcover <- terra::rast("C:/Users/sageb/OneDrive/Desktop/ESS_GitHub/Final-Projects-Class/data/NLCD_CO.tif")
+
+elevation <- terra::rast("C:/Users/sageb/OneDrive/Desktop/ESS_GitHub/Final-Projects-Class/data/elevation.tif")
+
+
+# read in data
+load("C:/Users/sageb/OneDrive/Desktop/ESS_GitHub/Final-Projects-Class/data/shinyDemoData.RData") # includes `occ` and `ROMO`
+
+```
+
+```{r}
+#INat Extract
+zip_file <- "C:/Users/sageb/OneDrive/Desktop/ESS_GitHub/Final-Projects-Class/data/observations-734996.csv.zip"
+unzip(zip_file, exdir = "C:/Users/sageb/OneDrive/Desktop/ESS_GitHub/Final-Projects-Class/Shiny_Final")
+```
+
+```{r}
+iNat <- read.csv("C:/Users/sageb/OneDrive/Desktop/ESS_GitHub/Final-Projects-Class/Shiny_Final/observations-734996.csv")
+```
+
+```{r}
+#Landcover Extract
+zip_file <- "C:/Users/sageb/OneDrive/Desktop/ESS_GitHub/Final-Projects-Class/data/Annual_NLCD_CONUSV1_Ref_Data_Release.zip"
+unzip(zip_file, exdir = "C:/Users/sageb/OneDrive/Desktop/ESS_GitHub/Final-Projects-Class/Shiny_Final")
+```
+
+```{r}
+landcover <- terra::rast("C:/Users/sageb/OneDrive/Desktop/ESS_GitHub/Final-Projects-Class/Shiny_Final/Annual_NLCD_CONUSV1_Ref_Data_Release/lcnext-1.0-stratum-map-Clipped.tif")
+
+landcover_prj <- project(landcover, crs(iNat))
+
+```
+
+```{r}
+extract(landcover_prj, iNat)
+```
+
+
+```{r}
+iNat <- iNat %>%
+  mutate(common_landcover = extract(landcover_prj, iNat)) %>%
+  unnest(common_landcover) %>% 
+  #lets rename the land cover column which is now called "NLCD Land Cover Class"
+  rename(common_landcover = "NLCD Land Cover Class")
+```
+
+
+```{r}
+nv_counties <- counties(state = "NV")
+```
+
+
+#Clean-up
+```{r}
+# clean up the occ data and make spatial
+iNat <- bind_rows(iNat) %>% 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+
+```
+
+#Elevation
+```{r}
+nv_elevation <- get_elev_raster(nv_counties, z = 7)
+nv_elevation_terra <- rast(nv_elevation)
+
+nv_elev_terra <- terra::extract(nv_elevation_terra, vect(iNat))
+
+iNat$elevation <- nv_elev_terra[,2]
+```
+```{r}
+mapview(landcover)
+
+landcover_prj <- project(landcover, crs(iNat))
+
+extract(landcover_prj, iNat)
+
+iNat <- iNat %>%
+  mutate(common_landcover = extract(landcover_prj, iNat)) %>%
+  unnest(common_landcover) %>% 
+  rename(common_landcover = "NLCD Land Cover Class")
+```
+
+
+Transform
+```{r}
+# transform the CRS of poudre_points_sf to the CRS of poudre_hwy
+iNat <- st_transform(iNat, st_crs(nv_counties))
+
+# Now check that they match
+st_crs(iNat) == st_crs(nv_counties)
+```
+```{r}
+st_crs(iNat)
+st_crs(nv_elevation)
+st_crs(nv_counties)
+```
+
